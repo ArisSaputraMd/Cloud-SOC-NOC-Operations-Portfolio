@@ -51,15 +51,29 @@ cloud-security-operations-portfolio/
 
 #### Phased Execution Plan
 
-**Phase 1 – Foundation.**
+- Phase 1 – Foundation.
+  - AWS account hardening.
+  - IAM security baseline.
+  - VPC design and network segmentation.
+  - Logging baseline configuration.
+  - Cost control and governance setup.
 
-- AWS account hardening. - IAM security baseline. - VPC design and network segmentation. - Logging baseline configuration. - Cost control and governance setup.
+- Phase 2 – Cloud NOC Operations.
+  - Availability monitoring.
+  - Resource health dashboards.
+  - Alerting configuration.
+  - Uptime validation and service checks.
 
-**Phase 2 – Cloud NOC Operations.** - Availability monitoring. - Resource health dashboards. - Alerting configuration. - Uptime validation and service checks.
+- Phase 3 – SOC Operations.
+  - Centralized log aggregation.
+  - Security event monitoring.
+  - Incident simulation and response documentation. - Alert triage workflow.
 
-**Phase 3 – SOC Operations.** - Centralized log aggregation. - Security event monitoring. - Incident simulation and response documentation. - Alert triage workflow.
-
-**Phase 4 – Detection Engineering.** - Custom detection use cases. - Log-based threat hunting. - Attack simulation and detection validation. - Continuous improvement of security controls
+- Phase 4 – Detection Engineering.
+  - Custom detection use cases.
+  - Log-based threat hunting.
+  - Attack simulation and detection validation.
+  - Continuous improvement of security controls
 
 #### Target Roles
 
