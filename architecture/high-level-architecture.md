@@ -1,6 +1,6 @@
 # High-Level Architecture
 
-![Architecture Diagram](./diagrams/architecture-diagram.png)
+![Architecture Diagram](../assets/diagrams/architecture-diagram.png)
 
 ### Overview
 

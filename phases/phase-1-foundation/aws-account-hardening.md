@@ -1,5 +1,7 @@
 ## AWS Account Hardening
 
+![aws-account-hardening.png](../../assets/img/Account-hardening.png)
+
 In Phase 1, I applied multiple layers of security controls to protect my AWS account credentials and prevent unauthorized access. This follows current AWS best practices (2026) and aligns with the Well-Architected Security Pillar.
 
 AWS supports several identity types:
@@ -18,11 +20,13 @@ AWS supports several identity types:
    - Created a group/user and assigned the permission set.
    - Sign in exclusively via Identity Center for all administrative tasks — this provides temporary credentials and centralized management.
 
-2. **Secured the Root User**
+   ![it-team.png](../../assets/screenshot/phase-1/admin-team.png)
+
+2. **Secured the all Account**
    - Set a strong password (≥20 characters, mixed case, numbers, symbols; generated securely with no reuse).
-   - Enabled multi-factor authentication (MFA) immediately (multiple devices for resiliency):
-     - Preferred: Passkey or FIDO security key (phishing-resistant and strongly recommended by AWS).
-     - Acceptable fallback: Hardware TOTP token or authenticator app (e.g., Authy).
+   - Enabled multi-factor authentication (MFA) immediately (multiple devices for resiliency): - Preferred: Passkey or FIDO security key (phishing-resistant and strongly recommended by AWS). - Acceptable fallback: Hardware TOTP token or authenticator app (e.g., Authy).
+
+   ![mfa-authentication](../../assets/screenshot/phase-1/mfa-authentication.png)
    - **Never created or used access keys** for the root user — deleted any if present.
    - Use root only for rare tasks (e.g., account closure, enabling Organizations).
 
