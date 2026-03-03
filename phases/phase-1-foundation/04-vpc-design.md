@@ -6,10 +6,22 @@
 
 ![vpc-design-diagram.png](../../assets/diagrams/vpc-design-diagram.png)
 
-To simulate both SOC and NOC operation, I've created secure VPC custom with proper network segmentation and core component. VPC is Designed for multi-AZ but implemented single AZ to save costs/time. Below is VPC and it's feature I've created:
+**Objectives: Create VPC custom and it's component that capable to simulate both SOC and NOC operation.**
 
-**SOC Lab VPC**
+VPC is Designed for multi-AZ but I implemented single AZ to save costs/time. Below is spesification of VPC and it's feature I've design:
 
-I've created VPC with tag name= SOC-Lab-VPC and IPv4 CIDR 10.0.1.0/16. To support Production environment I choose to use wide range of CIDR block, with /16 block this VPC can hold up to 65534 Host/Net. It will give enough ip for scalilbility and future defelopment.
+- VPC
+  - IPv4 CIDR : 10.0.1.0/16.
+  - Tag Name : SOC-Lab-VPC.
+  - AZ : ap-southeast-3a.
 
-![soc-lab-vpc](../../assets/screenshot/phase-1/SOC-lab-vpc.png)
+- Internet Gateway
+  - Tag name : soc-lab-igw.
+
+- NAT Gateway
+  - Tag name : southeast-3a-nat-gateway.
+  - Primary Public IPv4 address : 16.79.166.182.
+  - Primary Public IPv4 address : 10.0.1.20.
+  - Subnet : public-subnet.
+
+- EC2

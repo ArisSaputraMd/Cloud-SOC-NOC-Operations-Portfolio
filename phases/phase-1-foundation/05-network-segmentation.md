@@ -8,15 +8,3 @@ For poper segmentation I've seperated Public and Private subnet Public subnet wi
 - Monitoring subnet (10.0.4.0/24) - private subnet for central Monitoring and Incident Response instance.
 
 ![subnets.png](../../assets/screenshot/phase-1/subnes.png)
-
-**Internet Gateway**
-
-Internet Gateway is AWS instance that handle igreess/outgreess of an VPC traffic. Without internet gateway all instances within VPC wouln't be able to communicate with the internet. I've created IGW and attach it to SOC-Lab-VPC.
-
-![internet-gateway.png](../../assets/screenshot/phase-1/internet-gateway.png)
-
-**NAT Gateway**
-
-I've created NAT Gateway in my public subnet, add my privte IPv4 address (10.0.1.20) and Elastic IP. NAT gateway will allow my instances in my private subnets to access the internet as outbound only, usefull for downloading or update update.
-
-![nat-gateway](../../assets/screenshot/phase-1/nat-gateway.png)
