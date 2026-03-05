@@ -79,10 +79,11 @@ cloud-security-operations-portfolio/
 
 This portfolio is designed to demonstrate readiness for:
 
-- Cloud NOC Analyst
+- NOC Technician/NOC Analyst
 - SOC Analyst (Tier 1 / Tier 2)
 - Junior Cloud Security Engineer
 
 #### Status
 
-Phase 1 – [In Progress..](./phases/phase-1-foundation/)
+Phase 1 – [In Progress..](./phases/phase-1-foundation/).
+Phase 2 - [Soon](./phases/phase-2-cloud-noc/).
