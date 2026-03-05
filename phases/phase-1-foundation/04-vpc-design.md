@@ -6,12 +6,15 @@
 
 ![vpc-design-diagram.png](../../assets/diagrams/vpc-design-diagram.png)
 
-**Objectives: Create VPC custom and it's component that capable to simulate both SOC and NOC operation.**
+**Objectives: VPC custom and it's component with proper network segmentation, capable to simulate both SOC and NOC operation.**
 
-VPC is Designed for multi-AZ but I implemented single AZ to save costs/time. Below is spesification of VPC and it's feature I've design:
+VPC and feature design spesification:
 
 - Region: Asia Pasific (Jakarta).
+
 - Availiability Zone: ap-southeast-3a
+
+  > VPC is Designed for multi-AZ, implemented single AZ to save costs/time.
 
 - VPC
   - Tag Name : SOC-Lab-VPC.
@@ -54,7 +57,7 @@ VPC is Designed for multi-AZ but I implemented single AZ to save costs/time. Bel
   - listener : HTTPS/443 (forward), HTTP/80 (redirect to URL).
   - Target-Group: soc-lab-internal-services.
 - Web/App Server
-  - Tag Name : ec2-web/app-server-ubuntu22.04.
+  - Tag Name : ec2-web/app-server.
   - IPv4 Address : 10.0.2.135.
   - AMI : Ubuntu server 22.04 LTS(HVM).
   - Architecture : 64-bit(ARM)
@@ -100,3 +103,7 @@ VPC is Designed for multi-AZ but I implemented single AZ to save costs/time. Bel
     - inbound rules: source: web-app-server-sg, tcp/1514,tcp1515.
     - inbound rules: source: wazuh-ec2-sg, tcp/1514,tcp1515.
     - outbound rules : dest: 0.0.0.0 ~ any.
+
+- Routing Table
+
+expected service cost:
