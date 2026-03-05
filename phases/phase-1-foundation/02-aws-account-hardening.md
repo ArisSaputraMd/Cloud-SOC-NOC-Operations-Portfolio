@@ -13,17 +13,19 @@ AWS supports several identity types:
 
 ### Key Best Practices I Followed
 
-1. **Created an Administrator Identity (Do NOT use root daily)**  
+1. **Created an Administrator User (Do NOT use root daily)**  
    To minimize risk, I avoid daily operations with the root user. Instead:
-   - Enabled AWS IAM Identity Center (formerly AWS SSO).
+   - Created IAM administrator user.
    - Created a permission set with administrative access (e.g., AdministratorAccess).
    - Created a group/user and assigned the permission set.
    - Sign in exclusively via Identity Center for all administrative tasks — this provides temporary credentials and centralized management.
 
-   ![it-team.png](../../assets/screenshot/phase-1/admin-team.png)
+   ![it-team.png](../../assets/screenshot/phase-1/iam-admin-user.png)
 
 2. **Secured the all Account**
-   - Set a strong password (≥20 characters, mixed case, numbers, symbols; generated securely with no reuse).
+   - Following NIST password security guidelines, (convenience with long passphrases) i have set password requirement with minimum 16 characters, and not set mandatory for complexity. (recommended to use password manager for hases and salting)
+
+   ![pawwsord-policy.png](../../assets/screenshot/phase-1/password-policy.png)
    - Enabled multi-factor authentication (MFA) immediately (multiple devices for resiliency): - Preferred: Passkey or FIDO security key (phishing-resistant and strongly recommended by AWS). - Acceptable fallback: Hardware TOTP token or authenticator app (e.g., Authy).
 
    ![mfa-authentication](../../assets/screenshot/phase-1/mfa-authentication.png)

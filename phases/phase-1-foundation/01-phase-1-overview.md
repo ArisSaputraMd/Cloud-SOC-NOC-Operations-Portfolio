@@ -4,7 +4,7 @@ Goal: Establish a secure, segmented AWS baseline suitable for NOC/SOC simulation
 
 What I completed:
 
-- Hardened the AWS account (root protection + IAM Identity Center)
+- Hardened the AWS account (root protection + IAM user admin).
 - Designed and deployed a production-style VPC with public/private segmentation
 
 Trade-offs due to budget:
