@@ -4,7 +4,7 @@
 
 ## VPC Design
 
-![vpc-design-diagram.png](../../assets/diagrams/vpc-design-diagram.png)
+![vpc-design-diagram.png](../../assets/diagrams/vpc-design.png)
 
 **Objectives: VPC custom and it's component with proper network segmentation, capable to simulate both SOC and NOC operation.**
 
@@ -12,7 +12,7 @@ VPC and feature design spesification:
 
 - Region: Asia Pasific (Jakarta).
 
-- Availiability Zone: ap-southeast-3a
+- Availiability Zone: `ap-southeast-3a`, `ap-southeast-3c`
 
   > VPC is Designed for multi-AZ, implemented single AZ to save costs/time.
 
