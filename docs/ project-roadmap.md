@@ -1,5 +1,7 @@
 ## Project Roadmap
 
+---
+
 #### 1. Project Vision
 
 This project is designed to simulate the build-out of a cloud-based Security Operations environment from foundational infrastructure to detection engineering.
@@ -102,11 +104,11 @@ Deliverable:
 
 **4. Milestone Strategy**
 
-This project is designed to allow incremental portfolio value.
+This project is designed to deliver incremental portfolio value.
 
 - Completion of Phase 1 enables readiness for entry-level Cloud/NOC roles.
 - Completion of Phase 2 demonstrates operational monitoring capability.
-- Completion of Phase 3 positions for SOC Analyst roles.
+- Completion of Phase 3 positions you for SOC Analyst roles.
 - Completion of Phase 4 demonstrates detection engineering fundamentals.
 
 **5. Long-Term Objective**
@@ -117,3 +119,5 @@ By completing this portfolio, the goal is to demonstrate the ability to:
 - Operate and monitor production-like systems
 - Detect and respond to security events
 - Improve detection capability over time
+
+---
