@@ -1,4 +1,4 @@
-## Cloud Security Operations Portfolio
+## Cloud-SOC-NOC-Operations-Portfolio
 
 #### Overview
 
@@ -37,7 +37,7 @@ The environment simulates a small production cloud deployment:
 #### Project Structure.
 
 ```
-cloud-security-operations-portfolio/
+Cloud-SOC-NOC-Operations-Portfolio/
 │
 ├── docs/
 ├── architecture/
