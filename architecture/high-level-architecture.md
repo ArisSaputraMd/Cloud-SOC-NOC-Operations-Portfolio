@@ -1,6 +1,9 @@
 # High-Level Architecture
 
-![Architecture Diagram](../assets/diagrams/architecture-diagram.png)
+![Architecture Diagram](../assets/diagrams/high-level-architecture2.0.png)
+_Figure 1: Multi-tier, multi-AZ architecture with ALB + WAF entry point, strict tiered segmentation, regional NAT outbound, and isolated monitoring subnet for SOC visibility._
+
+---
 
 ### Overview
 
@@ -8,7 +11,7 @@ This architecture is designed to simulate a production-style cloud environment t
 
 The goal is not to build every advanced feature at once, but to establish a secure baseline architecture that allows monitoring, logging, detection, and controlled attack simulation.
 
-Due to budget considerations, some components may be implemented incrementally. However, the core security and operational principles will remain aligned with industry best practices.
+Due to budget considerations, some components may be implemented incrementally. However, the core security and operational principles remain aligned with industry best practices.
 
 > _Note: The architecture may evolve as the project matures and additional controls are implemented._
 
@@ -16,24 +19,34 @@ Due to budget considerations, some components may be implemented incrementally. 
 
 The environment is deployed inside a dedicated AWS VPC with proper network segmentation.
 
+##### Availability Zone
+
+Deployed across two Availability Zones for high availability and fault tolerance.
+
+- Resources (web, app, DB instances) are distributed to eliminate single points of failure.
+- NAT Gateway configured for regional mode (introduced Nov 2025) to provide automatic multi-AZ expansion without managing per-AZ gateways.
+
 ##### Subnet Structure
 
-1. Public Subnet(s)
-   - Hosts internet-facing services (EC2 Web Server – Ubuntu, t3.micro).
-   - Connected to an Internet Gateway.
-   - Security Groups allow only required inbound traffic (HTTP/HTTPS or specific test ports).
+1. Public Subnets (one per AZ)
+   - Host internet-facing components: Application Load Balancer (ALB) and NAT Gateway (zonal fallback if needed).
+   - Connected to Internet Gateway.
+   - AWS WAF attached to ALB provides first-line web application protection (L7 filtering).
 
-2. Private Subnet(s)
-   - Hosts internal services such as application servers or databases (EC2 or RDS).
-   - No direct internet exposure.
-   - Access restricted via Security Groups (only allowed from specific source security groups).
+2. Private Subnets — Tiered for defense-in-depth
+   - Web Tier — Hosts EC2 web servers (auto-scaling group), reachable only from ALB.
+   - App Tier — Hosts EC2 application servers (auto-scaling group), reachable only from web tier.
+   - DB Tier — Hosts primary and replica MySQL (EC2-based), reachable only from app tier.
+   - Monitoring Tier — Isolated subnet for SIEM/security monitoring instance, receives logs from all tiers.
+   - No direct internet exposure; outbound internet via NAT Gateway only.
+   - Access strictly controlled via reference-based Security Groups (least privilege).
 
 ##### Network Controls
 
 - Route Tables configured for controlled traffic flow.
 - NAT Gateway used when private instances require outbound internet access (updates, packages).
 - Security Groups used for instance-level segmentation.
-- Network ACLs configured to follow baseline security rules.
+- Network ACLs for baseline deny-all rules planned for additional subnet-level control (currently using Security Groups as primary enforcement).
 
 This segmentation ensures separation between exposed services and internal resources, following the principle of least privilege.
 
@@ -64,25 +77,19 @@ This layer supports SOC-style investigation workflows and enables future detecti
 
 ### SIEM / Dashboard / Alerting Layer
 
-To simulate centralized log analysis, a lightweight SIEM platform is deployed:
+A dedicated private monitoring subnet hosts a security monitoring instance (Wazuh/Splunk) that simulates centralized log aggregation and analysis.
 
-- Wazuh (Ubuntu EC2 – t3.micro)
-  - Used for log aggregation and visualization.
-  - Can receive logs from monitored instances and integrate with AWS log sources.
+CloudWatch complements this with:
 
-Agents on Web/App EC2s connect outbound to Wazuh private IP:1514 (events) and 1515 (enrollment).
-
-CloudWatch is used for:
-
-- Metric collection.
-- Alert configuration.
-- Basic operational dashboards.
+- Metric collection from EC2, ALB, RDS/EC2 DB, NAT Gateway.
+- Custom alarms for availability and security thresholds.
+- Basic NOC dashboards for resource health and uptime.
 
 > _Note: Due to resource constraints, only one primary dashboard/analysis platform may be active at a time._
 
 ### Attack Simulation Approach
 
-Attack simulation will be conducted from an external controlled environment, rather than hosting attacker infrastructure inside the production VPC to reflects real-world threat models, where attacks originate from outside the organization’s network.
+Attack simulation will be conducted from an external controlled environment, rather than hosting attacker infrastructure inside the production VPC. This reflects real-world threat models, where attacks originate from outside the organization’s network.
 
 The objective of attack simulation is validation:
 
@@ -101,7 +108,7 @@ This architecture is built with:
 - Controlled exposure of public services.
 - Audit visibility through API logging.
 
-Even if deployed at small scale, the structure follows patterns used in real cloud environments.
+Even if deployed at a small scale, the structure follows patterns used in real cloud environments.
 
 ### What This Achieves
 
@@ -112,3 +119,13 @@ This architecture supports:
 - Log-based detection development.
 - Controlled threat simulation.
 - Progressive security maturity.
+
+---
+
+### Key Design Decisions & Trade-offs
+
+- Regional NAT Gateway (2025 feature) — Chosen for automatic HA and simplified routing (single route table for all private subnets).
+- EC2-based MySQL (instead of RDS) — Allows full control for attack simulation / detection testing while keeping costs low.
+- Single monitoring instance — Budget constraint; production would use multi-AZ or managed SIEM (e.g., Amazon OpenSearch + Security Analytics).
+- No public SSH — All access via AWS Systems Manager Session Manager.
+- Future phases — Add NACLs, VPC Endpoints (S3, CloudWatch), AWS Config rules, and automated detection playbooks.
