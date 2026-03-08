@@ -1,10 +1,12 @@
 ## IAM Baseline
 
-![aws-baseline](../../assets/img/aws-iam.png)
+![aws-baseline](../../assets/img/aws-iam.png) \*_Figure 1: AWS IAM banner_
+
+---
 
 #### Modern AWS Recommendation (2026)
 
-AWS strongly recommends **AWS IAM Identity Center** (organization instance) for human workforce access. It delivers:
+AWS strongly recommends AWS IAM Identity Center (organization instance) for human workforce access. It delivers:
 
 - Temporary credentials via role assumption (no long-lived access keys or console passwords in AWS)
 - Centralized permission sets that map to roles (least privilege at scale)
@@ -32,7 +34,7 @@ This approach allows clear demonstration of:
 
 - Created dedicated groups: admin-full, soc-analyst, noc-monitoring, app-operator, and db-operator.
 
-![iam-groups](../../assets/screenshot/phase-1/iam-groups.png)
+  ![iam-groups](../../assets/screenshot/phase-1/iam-groups.png) \*_Figure 2: Preview User Group List_
 
 - Attached custom customer-managed policies (avoided broad AWS-managed policies like AdministratorAccess)
   - SOC analyst example: Read-only access to investigation tools  
@@ -42,7 +44,7 @@ This approach allows clear demonstration of:
 - Default deny + explicit allow pattern enforced
 - Policies attached only to groups, not individual users
 
-![grp-soc-analyst](../../assets/screenshot/phase-1/grp-soc-analyst.png)
+  ![grp-soc-analyst](../../assets/screenshot/phase-1/grp-soc-analyst.png) \*_Figure 3: Preview Example of Attached user group policy - (source: grp-soc-analyst)_
 
 **Credential & Root Security**
 
@@ -51,7 +53,7 @@ This approach allows clear demonstration of:
 - Root user: MFA enabled, no daily console usage, no access keys created, limited to emergency/billing tasks only
 - No long-term access keys used for human access (console + MFA only)
 
-![iam-mfa](../../assets/screenshot/phase-1/iam-mfa-baseline.png)
+  ![iam-mfa](../../assets/screenshot/phase-1/iam-mfa-baseline.png) \*_Figure 4: Configured MFA_
 
 **IAM Roles for Workloads (Instance Profiles)**
 
@@ -59,7 +61,10 @@ This approach allows clear demonstration of:
   - Examples: `CloudWatchAgentServerPolicy`, `AmazonSSMManagedInstanceCore`, custom read/write to specific S3 buckets/CloudWatch Logs for agents
 - Temporary credentials only — no static keys embedded in code or config
 
-![role-ec2-analyst](../../assets/screenshot/phase-1/role-ec2-monitor.png)
+  ![role-ec2-analyst](../../assets/screenshot/phase-1/role-ec2-monitor.png)
+  \*Figure 5: Preview EC2-Monitor role and it attached policy\*\*
+
+---
 
 #### Future Improvement Path
 
