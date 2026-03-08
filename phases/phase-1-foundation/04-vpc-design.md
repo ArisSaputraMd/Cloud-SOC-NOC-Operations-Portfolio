@@ -1,109 +1,95 @@
-<!-- >Restrict bastion SG to your IP only"Bastion for lab access; in production, I'd use SSM to eliminate public SSH."
-> "Designed for multi-AZ; implemented single AZ to save costs/time."
->App → DB (e.g., 3306/5432) — ensure SG allows only from app SG -->
-
-## VPC Design
+## VPC Design and Network Segmentation
 
 ![vpc-design-diagram.png](../../assets/diagrams/vpc-design.png)
+_Figure 1: Overall architecture showing tiered segmentation, multi-AZ layout, ALB entry point, NAT outbound, and isolated monitoring subnet_
 
-**Objectives: VPC custom and it's component with proper network segmentation, capable to simulate both SOC and NOC operation.**
+---
 
-VPC and feature design spesification:
+#### Objectives
 
+Deploy a custom VPC with proper multi-AZ network segmentation to simulate secure production-like NOC (availability, monitoring) and SOC (detection, isolation, logging) operations.
+
+#### Key Design Principles
+
+- Multi-AZ resilience across `ap-southeast-3a` and `ap-southeast-3b`.
+- Strict tiered isolation: Public > Private Web > Private App > Private DB > Monitoring.
+- Least-privilege access via reference-based security groups.
+- Outbound-only internet for private subnets via NAT Gateway.
+- Centralized monitoring in a dedicated subnet for SIEM.
+
+#### VPC Fundation
+
+- Tag Name : SOC-Lab-VPC.
+- IPv4 CIDR : 10.0.0.0/16.
 - Region: Asia Pasific (Jakarta).
-
-- Availiability Zone: `ap-southeast-3a`, `ap-southeast-3c`
-
-  > VPC is Designed for multi-AZ, implemented single AZ to save costs/time.
-
-- VPC
-  - Tag Name : SOC-Lab-VPC.
-  - IPv4 CIDR : 10.0.0.0/16.
-  - AZ : ap-southeast-3a.
-
-- Public Subnet
-  - Tag Name : public-subnet.
-  - CIDR : 10.0.1.0/24.
-
-- Private Web/App Subnet
-  - Tag Name : private-web/app-subnet.
-  - CIDR : 10.0.2.0/24.
-
-- Private Database Subnet
-  - Tag Name : private-db-subnet.
-  - CIDR : 10.0.3.0/24.
-
-- Private Monitoring Subnet
-  - Tag Name : monitoring-subnet.
-  - CIDR : 10.0.4.0/24.
-
+- Availiability Zone: `ap-southeast-3a`, `ap-southeast-3b`.
 - Internet Gateway
-  - Tag name : soc-lab-igw.
+- NAT Gateway:
+  - Public IP = - ElasticIP
+  - Private IP = 10.0.5.20
+  - Subnet = public-subnet-b
+    > Single NAT in AZ-b chosen for cost optimization in lab (~$32/mo savings vs. dual). In production, Regional AZ provides automatic multi-AZ high availability without requiring you to manage multiple NATs or route tables. Cost scales with active AZs (~equivalent to 2 zonal NATs in this design).
 
-- NAT Gateway
-  - Tag name : southeast-3a-nat-gateway.
-  - Public IP : ##.##.###.#82
-  - Private IP : 10.0.1.20.
-  - Subnet : public-subnet.
+#### Subnet Layout & Tiering
 
-- Application Load Balancer
-  - Name : app-load-balancer.
-  - Public IP : ##.###.##.12.
-  - Private IP: 10.0.1.10.
-  - Scheme : Internet-facing.
-  - Ip Type : IPv4.
-  - Subnet : public-subnet.
-  - Security Group : app-load-balancer-sg.
-  - listener : HTTPS/443 (forward), HTTP/80 (redirect to URL).
-  - Target-Group: soc-lab-internal-services.
-- Web/App Server
-  - Tag Name : ec2-web/app-server.
-  - IPv4 Address : 10.0.2.135.
-  - AMI : Ubuntu server 22.04 LTS(HVM).
-  - Architecture : 64-bit(ARM)
-  - Instance Type : t4g.micro, 2vCPU, 1GB memory.
-  - Key Pair : RSA, .pem.
-  - Storage : 1 volum(s) - 8GiB
-  - Delete on Termination: enabled.
-  - Security Group : web-app-server-sg.
+To provide confidentiality and availability, I've segmented my VPC by creating:
 
-- Databse Server
-  - Tag Name : ec2-web/app-server-ubuntu22.04.
-  - IPv4 Address : 10.0.2.135.
-  - AMI : Ubuntu server 22.04 LTS(HVM).
-  - Architecture : 64-bit(ARM)
-  - Instance Type : t4g.micro, 2vCPU, 1GB memory.
-  - Key Pair : RSA, .pem.
-  - Storage : 1 volum(s) - 8GiB
-  - Delete on Termination: enabled.
-  - Security Group : web-app-server-sg.
+- 2 Availability Zone - Spread the resources and subnet across Availability Zones. Prevent single of failure.
+- Public subnets - Internet-facing subnet (ALB and NAT) and first defence AWS WAF.
+- 3-tier of private subnets - Web, App, and Database, this provides defence in-depth by segmenting each layer.
+- Monitoring the subnet for central logs collection and security monitoring.
 
-- Monitoring Instance
-  - Tag Name : ec2-web/app-server-ubuntu22.04.
-  - IPv4 Address : 10.0.2.135.
-  - AMI : Ubuntu server 22.04 LTS(HVM).
-  - Architecture : 64-bit(ARM)
-  - Instance Type : t4g.micro, 2vCPU, 1GB memory.
-  - Key Pair : RSA, .pem.
-  - Storage : 1 volum(s) - 8GiB
-  - Delete on Termination: enabled.
-  - Security Group : web-app-server-sg.
+  ![subnets-list](../../assets/screenshot/phase-1/subnets.png)
+  _Figure 2: Console view of subnets with AZ spread and route table associations_
 
-- Security Group
-  - app-load-balancer-sg :
-    - inbound rules: source: 0.0.0.0/0 ~ http/80,https/443,.
-    - outbound rules : dest: 0.0.0.0/0
-  - web-app-server-sg :
-    - inbound rules: source: app-load-balancer-sg, tcp/8080.
-    - outbound rules : dest: 0.0.0.0 ~ any.
-  - database-sg:
-    - inbound rules: source: web-app-server-sg, tcp/3306.
-    - outbound rules : dest: 0.0.0.0 ~ any.
-  - wazuh-ec2-sg
-    - inbound rules: source: web-app-server-sg, tcp/1514,tcp1515.
-    - inbound rules: source: wazuh-ec2-sg, tcp/1514,tcp1515.
-    - outbound rules : dest: 0.0.0.0 ~ any.
+#### Routing & Traffic Flow
 
-- Routing Table
+- Public route table → IGW
+- Private route tables → NAT
+- No direct internet from private subnets
 
-expected service cost:
+  ![soc-lab-private-rt](../../assets/screenshot/phase-1/soc-lab-private-rt.png)
+  _Figure 3: Private subnet route table pointing to NAT Gateway_
+
+#### Security Groups – Network Segmentation Rules
+
+| Tag Name             | Inbound Rules                                              | Outbound Rules   |
+| -------------------- | ---------------------------------------------------------- | ---------------- |
+| sg-app-load-balancer | source: 0.0.0.0/0                                          | dest: 0.0.0.0/0  |
+|                      | protocol/port: HTTP/80; HTTPS/443                          | protocol/port: ~ |
+| sg-web-servers       | source: `sg-app-load-balancer`                             |
+|                      | protocol/port: TCP/8080                                    | protocol/port: ~ |
+| sg-app-servers       | source: `sg-web-servers`                                   | dest: 0.0.0.0/0  |
+|                      | protocol/port: TCP/8080                                    | protocol/port: ~ |
+| sg-database          | source: `sg-app-servers`                                   | dest: 0.0.0.0/0  |
+|                      | protocol/port: TCP(3306/5432)                              | protocol/port: ~ |
+| sg-monitoring        | source: `sg-web-servers`; `sg-app-servers`; `sg-database`; | dest: 0.0.0.0/0  |
+|                      | protocol/port: TCP/UDP(1514); TCP/1515;                    | protocol/port: ~ |
+
+> Future plan to implementing NACL for network-level restrictions.
+
+![sg-app-load-balancer](../../assets/screenshot/phase-1/sg-app-load-balancer.png)
+_Figure 4: Example of reference-based rule (source = sg-app-load-balancer)_
+
+#### Additional Network Controls
+
+- VPC Flow Logs enabled (flow logs > cloudwatch > EC2 monitoring)
+- AWS WAF on ALB
+- SSM Session Manager for main access
+- Open SSH on the monitoring instance (for demo purposes only)
+- VPC Endpoints for S3 / CloudWatch / GuardDuty
+
+#### Cost & Trade-off Summary
+
+- Single NAT Gateway: ~$32/mo savings vs dual
+- Graviton instances: ~20–40% cheaper
+- Monitoring instance oversized for demo
+- Mitigation: stop/start instances + Budgets alarms
+
+---
+
+#### Lessons Learned & Future Improvements
+
+- Single NAT chosen for budget (next step: regional AZ NAT).
+- Planned to implement NACLs for subnet-level deny rules in production
+- Migrate to the regional NAT Gateway when the feature matures in ap-southeast-3
