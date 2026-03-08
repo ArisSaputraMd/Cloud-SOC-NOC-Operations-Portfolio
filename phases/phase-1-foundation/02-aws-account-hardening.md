@@ -1,52 +1,87 @@
 ## AWS Account Hardening
 
-![aws-account-hardening.png](../../assets/img/Account-hardening.png)
+![aws-account-hardening.png](../../assets/img/Account-hardening.png)  
+\*_Figure 1: AWS account hardening banner_
 
-In Phase 1, I applied multiple layers of security controls to protect my AWS account credentials and prevent unauthorized access. This follows current AWS best practices (2026) and aligns with the Well-Architected Security Pillar.
+---
+
+In Phase 1, I implemented multiple layers of security controls to protect AWS account credentials and prevent unauthorized access. These measures follow current AWS best practices (2026) and align with the AWS Well-Architected Security Pillar.
 
 AWS supports several identity types:
 
-- **Root user** — The account owner with unrestricted access (use only when absolutely required).
-- **IAM Identity Center users** — Recommended for workforce/human access.
-- **Federated principals** — Temporary access via external identity providers (e.g., Okta, Entra ID).
-- **IAM users** — Legacy/direct users (avoid where possible; use sparingly).
+- Root user — the account owner with unrestricted access (use only when absolutely necessary).
+- IAM Identity Center users — recommended for workforce / human access.
+- Federated principals — temporary access via external identity providers (e.g., Okta, Entra ID).
+- IAM users — legacy / direct users (avoid where possible; use sparingly).
 
 ### Key Best Practices I Followed
 
-1. **Created an Administrator User (Do NOT use root daily)**  
-   To minimize risk, I avoid daily operations with the root user. Instead:
-   - Created IAM administrator user.
-   - Created a permission set with administrative access (e.g., AdministratorAccess).
-   - Created a group/user and assigned the permission set.
-   - Sign in exclusively via Identity Center for all administrative tasks — this provides temporary credentials and centralized management.
+**1. Created an Administrator IAM User (Do NOT use root user daily)**  
+To minimize risk, I avoid performing daily operations with the root user. Instead, I:
 
-   ![it-team.png](../../assets/screenshot/phase-1/iam-admin-user.png)
+- Created an IAM administrator user.
+- Assigned the `AdministratorAccess` managed policy (or a custom permission set with equivalent privileges).
+- Sign in exclusively with this administrator user for all administrative tasks.
 
-2. **Secured the all Account**
-   - Following NIST password security guidelines, (convenience with long passphrases) i have set password requirement with minimum 16 characters, and not set mandatory for complexity. (recommended to use password manager for hases and salting)
+  ![it-team.png](../../assets/screenshot/phase-1/iam-admin-user.png)  
+   \*_Figure 2: AWS Management Console after successful login with the Administrator IAM user._
 
-   ![pawwsord-policy.png](../../assets/screenshot/phase-1/password-policy.png)
-   - Enabled multi-factor authentication (MFA) immediately (multiple devices for resiliency): - Preferred: Passkey or FIDO security key (phishing-resistant and strongly recommended by AWS). - Acceptable fallback: Hardware TOTP token or authenticator app (e.g., Authy).
+**2. Secured the AWS Account**
 
-   ![mfa-authentication](../../assets/screenshot/phase-1/mfa-authentication.png)
-   - **Never created or used access keys** for the root user — deleted any if present.
-   - Use root only for rare tasks (e.g., account closure, enabling Organizations).
+- **Password policy**  
+  Following modern guidelines (NIST SP 800-63B influence + AWS recommendations), I configured a custom IAM password policy with:
+  - Minimum length: 16 characters.
+  - No mandatory complexity rules (uppercase, numbers, symbols) — favoring long, memorable passphrases.
+  - Passwords never expire (no forced periodic rotation).
+  - Users allowed to change their own passwords.
 
-3. **Avoided Long-Term Access Keys**  
-   Long-term access keys (access key ID + secret) do not expire automatically and are a common breach vector.
-   - Preferred approach: Use temporary credentials:
-     - IAM roles for workloads/EC2/Lambda/etc.
-     - IAM Identity Center for human users (federated SSO).
-   - If long-term keys are unavoidable (rare legacy cases only):
-     - Rotate regularly (e.g., every 90 days).
-     - Apply least privilege.
-     - Monitor usage with IAM last accessed information.
-     - Remove unused keys promptly.
+  This approach encourages strong, unique passphrases managed via a password manager (which handles hashing and salting internally).
 
-4. **Additional Controls**
-   - Used IAM Access Analyzer to identify unused permissions and refine policies.
-   - Applied least privilege everywhere (started with AWS managed policies, then customized).
-   - Planned for future: Organization-level controls (e.g., SCPs) once using AWS Organizations (post-core phases to preserve free tier).
+  ![pawwsord-policy.png](../../assets/screenshot/phase-1/password-policy.png)  
+  \*_Figure 3: Configured IAM password policy._
 
-**Outcome & Skills Demonstrated**  
-This hardening significantly reduces credential compromise risk and provides a secure foundation for NOC/SOC simulation in later phases. It shows my understanding of modern identity management — critical for Cloud Security Engineer, SOC Analyst, or NOC roles.
+- **Multi-Factor Authentication (MFA)**  
+  Enabled MFA on the root user immediately for phishing-resistant protection. I registered multiple devices for resiliency:
+  - Preferred: Passkey or FIDO2 security key (strongly recommended by AWS)
+  - Acceptable fallback: Hardware TOTP token or authenticator app (e.g., Authy)
+
+  ![mfa-authentication](../../assets/screenshot/phase-1/mfa-authentication.png)  
+  \*_Figure 4: MFA verification during login process._
+
+- **Root user credential hygiene**
+  - Never created or used access keys for the root user — deleted any if they existed previously.
+  - Use the root user only for rare, emergency tasks (e.g., account closure, enabling AWS Organizations, changing billing settings).
+
+**3. Avoided Long-Term Access Keys Where Possible**  
+Long-term access keys (access key ID + secret access key) do not expire automatically and are a frequent breach vector.
+
+- Preferred approach: Use temporary credentials whenever possible
+  - IAM roles for EC2 instances, Lambda, ECS, etc.
+  - IAM Identity Center (SSO) for human users
+- For the rare cases where long-term keys are unavoidable (legacy tools only):
+  - Rotate them regularly (at least every 90 days)
+  - Apply least privilege scope
+  - Monitor usage via IAM "last accessed" information
+  - Delete unused or stale keys immediately
+
+**4. Additional Controls Implemented**
+
+- Used IAM Access Analyzer to identify unused permissions and refine policies.
+- Applied least privilege everywhere — started with AWS managed policies, then customized as needed.
+- Planned for future: AWS Organizations + Service Control Policies (SCPs) once moving beyond single-account / free-tier constraints.
+
+---
+
+### Outcome & Skills Demonstrated
+
+This hardening process significantly reduces the risk of credential compromise and establishes a secure foundation for the NOC/SOC simulation environment built in later phases.
+
+Through this work, I demonstrated practical understanding of:
+
+- Modern cloud identity management
+- Root vs. IAM user security models
+- Phishing-resistant MFA strategies
+- Balanced password policy configuration
+- Least-privilege principles
+
+These are critical competencies for roles such as Cloud Security Engineer, SOC Analyst, Cloud NOC Analyst, or Junior Detection Engineer.
