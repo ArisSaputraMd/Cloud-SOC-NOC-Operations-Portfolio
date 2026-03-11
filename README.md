@@ -1,4 +1,6 @@
-## Cloud-SOC-NOC-Operations-Portfolio
+# Cloud-SOC-NOC-Operations-Portfolio
+
+![Architecture-diagram](/assets/diagrams/vpc-design.png) \*_Figure : Preview Lab VPC Design_
 
 #### Overview
 
