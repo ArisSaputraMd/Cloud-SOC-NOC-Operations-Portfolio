@@ -1,5 +1,7 @@
 # Compute and Load Balancing Deployment
 
+![EC2 list overview screenshot](../../assets/screenshot/phase-1/ec2-instances.png) \*_Figure 1: Console view of running instances_
+
 ---
 
 ## Overview
@@ -8,9 +10,6 @@ I deployed a multi-tier application (web → app → DB) with monitoring in isol
 
 - Cost Optimization: Used Graviton (t4g) instances for ~20–40% cost savings compared to x86.
 - Scalability: Auto Scaling is configured for the web and app tiers (min 2, desired 2, max 3 per AZ).
-
-![EC2 list overview screenshot](../../assets/screenshot/phase-1/ec2-instances.png)
-_Figure 1: Console view of all instances running_
 
 ## Digital Certificate
 
