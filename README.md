@@ -2,21 +2,23 @@
 
 ![Architecture-diagram](/assets/diagrams/vpc-design.png) \*_Figure : Preview Lab VPC Design_
 
-#### Overview
+---
+
+## Overview
 
 This repository documents the design and implementation of a production-style Cloud Security Operations environment built in AWS.
 
-> The goal of this project is to simulate real-world NOC and SOC operations within a cloud infrastructure, covering:
->
-> - Secure cloud architecture design
-> - Network monitoring and availability management
-> - Centralized logging and log analysis
-> - Threat detection and incident response
-> - Detection engineering and security automation
+The goal of this project is to simulate real-world NOC and SOC operations within a cloud infrastructure, covering:
+
+- Secure cloud architecture design
+- Network monitoring and availability management
+- Centralized logging and log analysis
+- Threat detection and incident response
+- Detection engineering and security automation
 
 This project is structured as a phased engineering program rather than a single lab, reflecting how modern cloud security operations are built and matured over time.
 
-#### Project Objectives
+## Project Objectives
 
 - Design a secure and segmented cloud network architecture.
 - Implement infrastructure following security best practices.
@@ -24,7 +26,7 @@ This project is structured as a phased engineering program rather than a single 
 - Simulate attack scenarios and document investigation workflow.
 - Build detection use cases aligned with real SOC operations.
 
-#### Architecture Overview
+## Architecture Overview
 
 The environment simulates a small production cloud deployment:
 
@@ -34,9 +36,7 @@ The environment simulates a small production cloud deployment:
 - Centralized logging and monitoring layer.
 - Security detection and response layer.
 
-> _Architecture diagrams and design decisions are documented in the _[/architecture](./architecture/)_ directory._
-
-#### Project Structure.
+## Project Structure.
 
 ```
 Cloud-SOC-NOC-Operations-Portfolio/
@@ -51,7 +51,7 @@ Cloud-SOC-NOC-Operations-Portfolio/
     └── phase-4-detection-engineering/
 ```
 
-#### Phased Execution Plan
+## Phased Execution Plan
 
 - Phase 1 – Foundation.
   - AWS account hardening.
@@ -77,7 +77,7 @@ Cloud-SOC-NOC-Operations-Portfolio/
   - Attack simulation and detection validation.
   - Continuous improvement of security controls
 
-#### Target Roles
+## Target Roles
 
 This portfolio is designed to demonstrate readiness for:
 
@@ -85,7 +85,9 @@ This portfolio is designed to demonstrate readiness for:
 - SOC Analyst (Tier 1 / Tier 2)
 - Junior Cloud Security Engineer
 
-#### Status
+---
+
+### Status
 
 Phase 1 – [In Progress..](./phases/phase-1-foundation/).
 Phase 2 - [Soon](./phases/phase-2-cloud-noc/).
