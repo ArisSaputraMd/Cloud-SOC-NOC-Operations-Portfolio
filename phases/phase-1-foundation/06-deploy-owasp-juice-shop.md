@@ -1,10 +1,15 @@
-# OWASP Juice Shop App Deployment
+# Web Server Configuration and App Deployment
+
+![deployment workflow](../../assets/screenshot/phase-1/06-user-flow-and-ci:di-pipeline.png) \*_Figure 1: Preview Diagram of User and Dev flow_
+
+---
 
 ## Overview
 
-I've deployed Juice Shop on my server, this app will help me to simulate NOC operation and SOC monitoring simulation, which is perfect for this lab. This file is document of step-by-step how i deployed the app
+**Nginx Reverse Proxy**
+I used Nginx as a reverse proxy behind the public ALB to introduce an additional Layer 7 control point. This allows me to implement custom routing, enhance logging for SOC monitoring, and add an internal security layer before traffic reaches private services
 
-**Introduction**
+**Juice Shop Intro**
 OWASP Juice Shop is an open-source, intentionally vulnerable web application developed under the Open Worldwide Application Security Project. It serves as a flagship platform for security education, penetration testing practice, and tool benchmarking, incorporating the full spectrum of vulnerabilities from the OWASP Top Ten and beyond. Its realistic e-commerce interface and gamified challenges make it one of the most advanced training tools in web application security.
 
 **Key facts**
@@ -15,178 +20,150 @@ OWASP Juice Shop is an open-source, intentionally vulnerable web application dev
 - License: MIT
 - Latest release: Version 19.1.1 (November 2025)
 
-**Example Traffic Flow**
+I've configured Nginx reverse proxy and deployed Juice Shop on my `app-asg` using docker container, this app will help me to simulate NOC operation and SOC monitoring simulation, which is perfect for this lab. This file is document of step-by-step how i deployed the app
+
+---
+
+## Nginx Reverse Proxy Configuration
+
+To make the lab stable and realistic, the best approach is to configure Auto Scaling Group so that every new EC2 instance automatically install and start Nginx.
+This is done using User Data in the Launch Template.
+
+**Edit the Launch Template**
+Modify the template (used by the web-asg) by adding the Startup Script:
+
+## Juice App Deployment (Ubuntu)
+
+Simillar To Nginx configuration on Web-asg, I've configured the launch template on App Auto Scaling Group so that every new EC2 instance automatically starts the container for OWASP Juice Shop.
+
+This way:
 
 ```
-User
-  |
-HTTPS
-  |
-AWS WAF
-  |
-Application Load Balancer
-  |
-Nginx (Web Tier)
-  |
-Juice Shop App (App Tier)
-  |
-SQLite Database
+ASG launches EC2
+      |
+User Data script runs automatically
+      |
+Docker installs
+      |
+Juice Shop container starts
 ```
 
-## Deployment (Ubuntu)
+No manual installation is needed.
 
-**1. Connect to the EC2 Server**
+**Step 1 — Edit the Launch Template**
 
-For connection to `ec2-app-servers` I used SSM instead of SSH.
-
-```
-IAM users (aris_admin) > AWS Systems Manager > Explore nodes > ec2-app-servers > connect > start terminal session
-```
-
-**2. Update the Server**
-Updating the system ensures the latest security patches are installed.
+Go to:
 
 ```
-$ sudo apt update && sudo apt upgrade
+EC2
+-> Launch Templates
+-> Select the template (used by the app-asg)
+-> Actions
+-> Modify template
+-> Advanced details
 ```
 
-![update server cli](../../assets/screenshot/phase-1/06-cli-update-server.png) \*_Figure 1: Console view ec2-app-server CLI_
+Find the User Data section.
 
-**3. Install Node.js**
+**Step 2 — Add the Startup Script**
 
-Node.js is required because Juice Shop is a Node application.
-But before installing Node.js, I need to installed Required Prerequisites first.
+![app juice script](../../assets/screenshot/phase-1/06-app-juicy-script-template.png)
+_Figure 2: Preview App Juice startup script_
 
-```
-$ sudo apt install -y curl ca-certificates gnupg
-$ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-```
+What this script does:
 
-These packages allow the system to download the Node.js installer and configures the NodeSource repository for Node.js 20 LTS.
+| Step                     | Action            |
+| ------------------------ | ----------------- |
+| Update packages          | prepares system   |
+| Install Docker           | container runtime |
+| Start Docker             | enable service    |
+| Run Juice Shop container | launch app        |
 
-```
-$ sudo apt install -y nodejs
-```
+The flag: `--restart always` ensures the container restarts automatically if the server reboots.
 
-This installs Node.js runtime and npm package manager
+**Step 3 — Save New Template Version**
 
-![node&npm version](../../assets/screenshot/phase-1/06-node&npm-version-cli.png) \*_Figure 2: Preview Node.js and Npm version_
-
-**4. Install Git**
-
-If you don't have Git installed yet, run commad :
+After editing:
 
 ```
-$ sudo yum install git -y
+Create new template version
 ```
 
-And Clone the repository:
+Then update the Auto Scaling Group to use the new version.
+
+**Step 4 — Refresh the Instances**
+
+Trigger instance replacement.
+
+Options:
 
 ```
-$ git clone https://github.com/juice-shop/juice-shop.git
-
-"Make sure youre in home directory (e.g. /home/ssm-user)"
+ASG → Instance Refresh
 ```
 
-Then enter the directory:
+or terminate one instance manually.
+
+When ASG launches a new instance:
 
 ```
-$ cd juice-shop
+EC2 starts
+User Data script runs
+Docker installs
+Juice Shop container launches
 ```
 
-**5. Install Application Dependencies**
+**Step 5 — Verify the Container**
 
-Install required packages:
+Connect to `app-asg` instance using AWS Systems Manager.
+
+Run:
+
+```bash
+sudo docker ps
+```
+
+You should see something like:
+![docker running container](../../assets/screenshot/phase-1/06-docker-test.png)
+_Figure 3: Console running container_
+
+**Step 6 — Confirm Load Balancer Target Health**
+
+Go to:
 
 ```
-npm install
+EC2
+→ Target Groups
+→ Targets
 ```
 
-This installs everything needed for the application to run.
+Your instance should become:
 
-![instal npm]() \*_Figure 3: Console view CLI npm install command_
+```
+Healthy
+```
 
-**7. Start the Application**
+because the container is serving traffic on:
 
-Run the server:
+```
+port 80
+```
 
-npm start
+---
 
-You should see output similar to:
+## Manual deployment Vs Auto Script
 
-Server listening on port 3000
+| Manual deployment | Problem                         |
+| ----------------- | ------------------------------- |
+| Manual install    | lost when ASG replaces instance |
+| npm build         | high memory usage               |
+| long install time | slow scaling                    |
 
-The app now runs on:
+Manual deployment required us to install the app manualy to every single instace, which not suitable for ASG.
 
-http://localhost:3000
-**8. Allow Traffic From the Load Balancer**
+| Automation script    | Benefit          |
+| -------------------- | ---------------- |
+| Docker container     | lightweight      |
+| User Data automation | consistent       |
+| ASG replacement      | instant recovery |
 
-Your security group should allow:
-
-Port 3000
-Source: ALB security group
-
-Traffic flow becomes:
-
-User
-↓
-WAF
-↓
-ALB (port 80/443)
-↓
-EC2 (port 3000)
-**9. Configure the Target Group**
-
-In your Application Load Balancer:
-
-Target group settings:
-
-Protocol: HTTP
-Port: 3000
-Health check path: /
-
-The load balancer will forward traffic to the application.
-
-This uses:
-
-Elastic Load Balancing
-
-**10. Make the App Run Automatically (Production Practice)**
-
-In real servers, apps run using a process manager like:
-
-PM2
-
-Install it:
-
-sudo npm install pm2 -g
-
-Run the app:
-
-pm2 start npm --name juice-shop -- start
-
-Save startup configuration:
-
-pm2 startup
-pm2 save
-
-Now the application auto-starts after reboot.
-
-**11. Logging for Your SOC Lab**
-
-The app will generate logs you can monitor with:
-
-Amazon CloudWatch
-
-Amazon GuardDuty
-
-AWS WAF
-
-You can simulate attacks and observe:
-
-WAF logs
-ALB logs
-Application logs
-VPC Flow Logs
-
-This creates real SOC investigation scenarios.
+By using docker container and Automation script, it will help to for easier scaling deployment, consistent configuration, and improve performence.
