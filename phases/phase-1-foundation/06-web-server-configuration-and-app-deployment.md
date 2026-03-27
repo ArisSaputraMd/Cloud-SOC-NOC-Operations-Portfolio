@@ -23,24 +23,23 @@ I placed Nginx behind the internet-facing Application Load Balancer (ALB) to add
 - Validating detection rules
 - Practicing incident response and log analysis in a controlled SOC environment
 
-**Key facts**
+Key facts
 
 - Initial release: 2014
 - Lead developer: Björn Kimminich
 - Programming stack: Node.js, Express, Angular, SQLite
 - License: MIT
-- Latest release: Version 19.1.1 (November 2025)
+- Latest release: Version 19.2.1 (March 2026)
 
-I've configured Nginx reverse proxy and deployed Juice Shop on my `app-asg` using docker container, this app will help me to simulate NOC operation and SOC monitoring simulation, which is perfect for this lab. This file is document of step-by-step how i deployed the app
+The application runs in a Docker container on the `app-asg` Auto Scaling Group, enabling stateless, repeatable, and auto-healing deployments perfect for demonstrating production-like operations in this lab.
 
 ---
 
 ## Nginx Reverse Proxy Configuration
 
-Incoming traffic from the public ALB is forwarded to the Nginx reverse proxy instances, which then route requests to the internal ALB for backend service distribution.
+Traffic from the Public ALB is forwarded to Nginx instances, which then proxy requests to the Private (internal) ALB. This design keeps backend routing flexible and supports future microservices expansion.
 
-To make the lab stable and realistic, the best approach is to configure Auto Scaling Group so that every new EC2 instance automatically install and start Nginx.
-This is done using User Data in the Launch Template.
+To ensure consistency in an Auto Scaling environment, all configuration is handled via User Data in the Launch Template for the `web-asg`.
 
 **Launch Template Configuration**
 
@@ -107,14 +106,11 @@ systemctl enable nginx
 **Test the Nginx Reverse Proxy**
 
 ![Nginx test](../../assets/screenshot/phase-1/06-nginx-reverse-proxy-test.png)
-_\*Figure 2: Console test of Nginx service, reverse proxy, and health Console test of Nginx service, reverse proxy, and health endpoint._
+_\*Figure 2: Nginx service status, reverse proxy test, and health endpoint validation.._
 
-- Check Nginx service (basic but critical)
-  `systemctl status nginx` : active (running).
-- Test reverse proxy (if it actually forwards to your backend)
-  `curl -I http://localhost` : 200 OK.
-- Test health endpoint (ALB dependency)
-  `curl http://localhost/health` : OK.
+- `systemctl status nginx` → Active (running)
+- `curl -I http://localhost` → HTTP/1.1 200 OK
+- `curl http://localhost/health` → OK
 
 ---
 
@@ -134,7 +130,7 @@ Docker installs
 Juice Shop container starts
 ```
 
-No manual installation is needed. Step-by-step:
+No manual installation is needed.
 
 **Step 1 — Edit the Launch Template**
 
@@ -154,7 +150,7 @@ Find the User Data section.
 **Step 2 — Add the Startup Script**
 
 ![app juice script](../../assets/screenshot/phase-1/06-app-juicy-script-template.png)
-_Figure 3: Preview App Juice startup script_
+_Figure 3: User Data script for automated Docker + Juice Shop deployment_
 
 What this script does:
 
@@ -198,77 +194,45 @@ Docker installs
 Juice Shop container launches
 ```
 
-**Step 5 — Verify the Container**
+**Step 5 — Verifications**
 
-Connect to `app-asg` instance using AWS Systems Manager.
+1. Check running container (via AWS SSM Session Manager):
 
-Run:
+   ```bash
+   ~$ sudo docker ps
+   ```
 
-```bash
-sudo docker ps
-```
+   ![docker running container](../../assets/screenshot/phase-1/06-docker-test.png)
+   _Figure 4: Juice Shop container running and mapped to port 80_
 
-You should see something like:
-![docker running container](../../assets/screenshot/phase-1/06-docker-test.png)
-_Figure 4: Console running container_
-
-**Step 6 — Confirm Load Balancer Target Health**
-
-Go to:
-
-```
-EC2
-→ Target Groups
-→ Targets
-```
-
-Your instance should become:
-
-```
-Healthy
-```
-
-because the container is serving traffic on:
-
-```
-port 80
-```
+2. Confirm target group health in the AWS Console (EC2 → Target Groups → Targets).
 
 ---
 
-## Overall Testing
+## End-to-End Testing
 
 Additionally, I verified end-to-end connectivity by sending requests through the public ALB DNS, confirming that traffic successfully flows through WAF → ALB → Nginx → Private ALB → Application.
 
-**End-to-End Test**
+**Console Test**
 
 From local machine:
 
 ![end-to-end test](../../assets/screenshot/phase-1/06-end-to-end-test.png)
-_\*Figure 5: Console view Response headers from backend (juice app)_
-
-`HTTP/1.1 200 OK`, This proves:
-✔ WAF working
-✔ Public ALB routing
-✔ Nginx forwarding
-✔ Private ALB routing
-✔ App responding
+_\*Figure 5: `curl -I -L` against the public domain shows successful routing with Nginx headers_
 
 **Browser Test (real user simulation)**
 
-Open in browser:
-
 ![brwoser test](../../assets/screenshot/phase-1/06-browser-test.png)
-_\*Figure 6: Preview OWASP Juice Shop_
+_\*Figure 6: OWASP Juice Shop homepage loaded successfully through the full stack._
 
 ---
 
-## Manual deployment Vs Auto Script
+## Manual vs Automated Deployment Comparison
 
-Manual deployment introduces inconsistency and does not align with Auto Scaling environments, where instances are ephemeral. In contrast, using Docker with User Data ensures that each instance is provisioned identically at launch, enabling stateless, repeatable, and scalable deployments.
-
-| Manual deployment | Problem                         | Automation script    | Benefit          |
-| ----------------- | ------------------------------- | -------------------- | ---------------- |
-| Manual install    | lost when ASG replaces instance | Docker container     | lightweight      |
-| npm build         | high memory usage               | User Data automation | consistent       |
-| long install time | slow scaling                    | ASG replacement      | instant recovery |
+| Aspect          | Manual Deployment            | Automated (User Data + Docker)       | Benefit for Production / SOC Lab           |
+| --------------- | ---------------------------- | ------------------------------------ | ------------------------------------------ |
+| Consistency     | High risk of drift           | Identical on every instance          | Reliable monitoring & detection baselines  |
+| Scalability     | Slow and error-prone         | Instant with ASG instance refresh    | Supports auto-healing and horizontal scale |
+| Recovery        | Manual intervention required | Automatic via --restart always + ASG | Better availability (NOC perspective)      |
+| Security        | Exposed install steps        | Immutable infrastructure pattern     | Reduced attack surface                     |
+| Maintainability | Hard to reproduce            | Version-controlled Launch Templates  | Easier auditing and documentation          |
