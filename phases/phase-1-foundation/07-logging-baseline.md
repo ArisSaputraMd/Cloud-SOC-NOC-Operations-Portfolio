@@ -1,260 +1,117 @@
-# Logging Baseline
+# Logging Baseline Configuration
 
-![logs-collection](../../assets/diagrams/logs-collection-flow.png) \*_Figure 1: Preview Logs Collections flows_
+![logs-collection-flow](../../assets/diagrams/logs-collection-flow.png)  
+_Figure 1: Logging and monitoring data flow in the lab environment_
 
 ---
 
-The environment implements a multi-layer logging strategy to ensure visibility across infrastructure, network, and host activity.
+## Overview
 
-## Infrastructure Logging
+This section implements the foundational logging and monitoring layer for the cloud environment.
 
-AWS CloudTrail logs all API activity across the account and streamsevents to CloudWatch Logs and S3 for retention and analysis.
+The design provides visibility into infrastructure changes, network traffic, application access, and host-level activity. It supports both Cloud NOC (availability and performance monitoring) and SOC (security event detection and investigation) operations.
 
-## Network Logging
+A layered approach ensures comprehensive coverage while keeping the architecture simple and scalable. All critical logs feed into centralized tools (CloudWatch and Wazuh) to enable future correlation and alerting.
 
-VPC Flow Logs capture network traffic metadata across all subnets and send logs to CloudWatch Logs.
+**Logging Layers**
 
-## Web Layer Logging
+- Cloud Audit: `AWS CloudTrail` – Tracks API activity and configuration changes
+- Network: `VPC Flow Logs` – Captures traffic metadata
+- Web/Application: `ALB Access Logs` – Records HTTP requests to OWASP Juice Shop
+- Host: `Wazuh Agent` – Collects OS logs, authentication, and file integrity
+- Monitoring: `Amazon CloudWatch` – Provides metrics, dashboards, and basic alarms
 
-AWS WAF logs blocked and allowed HTTP requests.
-Application Load Balancer access logs record inbound traffic.
+---
 
-## Host Logging
+## Implementation
 
-EC2 instances run the Wazuh agent to collect system, authentication,
-and integrity monitoring logs.
+#### 1. AWS CloudTrail (Infrastructure Auditing)
 
-## Monitoring
+Purpose: Create a centralized, tamper-resistant audit trail that records:
 
-CloudWatch provides centralized metrics, alarms, and log analysis
-to support NOC and SOC operations.
+- All API activity (who did what, when, from where)
+- Security-relevant events for SOC detection
+- Compliance-ready logs.
 
-What This Achieves (For Your Portfolio)
+**Flow:**
 
-Your project now demonstrates real cloud security architecture:
+    AWS Account Activity
+            |
+    CloudTrail (Management + Data Events)
+            |
+    S3 Bucket (log archive - immutable)
+            |
+    CloudWatch Logs (real-time monitoring)
+            |
+    SNS / Alerts (optional)
 
-Layer Tool Purpose
-Cloud audit CloudTrail API activity
-Network VPC Flow Logs traffic visibility
-Web WAF + ALB logs application attack monitoring
-Host Wazuh SOC detection
-Monitoring CloudWatch NOC operations
+**What I did**:
 
-1. Cloud Infrastructure Logging Baseline
+- Created a multi-region trail named `management-trail`.
+- Enabled logging for Read and Write management events.
+- Delivered logs to a dedicated S3 bucket with log file validation enabled.
+- Integrated with CloudWatch Logs for real-time monitoring.
 
-These logs give visibility into who changed what in AWS.
+---
 
-AWS CloudTrail
+- Created dedicated `cloudtrail-logs-aris-saputra` S3 Bucket (Log Storage) with :
+  - Versioning, Block Public Access, and Server-side encryption (SSE-S3) enabled. - Policy:
+    ![S3 Bucket Policy](../../assets/screenshot/phase-1/07-s3-bucket-policy.png)
+    _Figure 2: Console Preview S3 Buckets policy._
 
-Purpose:
-Audit all API activity in your AWS environment.
+#### 2. VPC Flow Logs (Network Visibility)
 
-Baseline configuration:
+Purpose: Capture accepted and rejected IP traffic for anomaly detection.
 
-Enabled organization-wide or account-wide
+**What I did**:
 
-Logging all management events
+- Enabled flow logs on the VPC and both public/private subnets.
+- Set filter to All traffic with 1-minute aggregation.
+- Delivered logs to CloudWatch Logs group `/aws/vpc/flowlogs`.
 
-Logging write + read events
+#### 3. Application Load Balancer Access Logs
 
-Delivery to S3 bucket
+Purpose: Track every HTTP request reaching the Juice Shop application.
 
-Integrated with CloudWatch Logs
+**What I did**:
 
-Critical events captured:
+- Enabled access logging on the ALB.
+- Configured delivery to a dedicated S3 bucket.
 
-IAM user creation
+#### 4. Wazuh Agent on EC2 Instances (Host Logging)
 
-Security group modification
+Purpose: Collect system, authentication, and integrity monitoring logs from application instances.
 
-VPC changes
+**What I did**:
 
-EC2 start/stop
+- Added Wazuh agent installation and registration directly into the Launch Template User Data script.
+- This ensures every new instance launched by the Auto Scaling Group automatically connects to the Wazuh manager.
 
-Policy changes
+**Key snippet from User Data**:
 
-Role assumptions
+```bash
+# Wazuh Agent Installation
+curl -sO https://packages.wazuh.com/4.x/wazuh-agent-4.x.deb
+sudo WAZUH_MANAGER="10.0.2.XX" WAZUH_AGENT_NAME="juice-shop-asg" dpkg -i ./wazuh-agent-4.x.deb
+sudo systemctl enable --now wazuh-agent
 
-Example security detections:
+```
 
-Privilege escalation
+#### 5. Verification
 
-Unauthorized IAM policy changes
+- CloudTrail: Confirmed events (e.g., IAM changes, EC2 actions) appear in the CloudWatch log group.
+- VPC Flow Logs: Generated traffic to Juice Shop and queried rejected connections using Logs Insights.
+- Wazuh: Verified agents show as Active in the Wazuh dashboard after ASG instance refresh.
+- CloudWatch: Created basic dashboards for EC2 CPU, ALB requests, and ASG health.
 
-New access keys created
+---
 
-Example baseline statement for your repo:
+## Key Takeaways
 
-CloudTrail is enabled for all regions and configured to log management events.
-Logs are delivered to S3 for long-term retention and streamed to CloudWatch Logs
-for real-time monitoring and alerting. 2. Network / Edge Logging Baseline
+- This logging setup is optimized for learning and demonstration purposes. To control costs, VPC Flow Logs and CloudWatch log retention are limited, and resources are stopped when not in active use.
+- Implemented automated, consistent logging across dynamic infrastructure (Auto Scaling Group) using Launch Template User Data — a practical skill for real production environments.
+- This setup gives immediate value for NOC (resource health monitoring) and prepares strong SOC capabilities (investigating unauthorized changes via CloudTrail or suspicious traffic via VPC Flow Logs).
+- Main challenge: Coordinating Security Group rules for Wazuh communication (TCP 1514/1515). Resolved by creating dedicated ingress rules from the app security group.
+- Production improvement idea: Forward CloudTrail and VPC Flow Logs into - Wazuh for centralized analysis and custom detection rules (planned for Phase 3/4).
 
-This layer shows traffic behavior.
-
-Amazon VPC Flow Logs
-
-Purpose:
-Capture network traffic metadata.
-
-What it logs:
-
-Source IP
-
-Destination IP
-
-Source port
-
-Destination port
-
-Protocol
-
-Accept / Reject
-
-Baseline configuration:
-
-Enabled on VPC or Subnet level
-
-Delivered to CloudWatch Logs
-
-Example detections:
-
-Port scanning
-
-Unexpected outbound connections
-
-Lateral movement attempts
-
-Blocked traffic
-
-Example baseline statement:
-
-VPC Flow Logs are enabled on all private and public subnets.
-Traffic metadata is delivered to CloudWatch Logs for network visibility
-and anomaly detection. 3. Web / Edge Protection Logs
-
-If you deployed WAF + ALB, you should log them.
-
-AWS WAF
-
-Purpose:
-Detect and analyze application layer attacks.
-
-Logs include:
-
-SQL injection attempts
-
-XSS attempts
-
-IP reputation matches
-
-Rate limit triggers
-
-Baseline configuration:
-
-WAF attached to ALB
-
-Logging enabled to CloudWatch Logs
-
-Example statement:
-
-AWS WAF logging is enabled to capture blocked and allowed web requests.
-Logs are streamed to CloudWatch Logs for threat analysis.
-Elastic Load Balancing (ALB Access Logs)
-
-Purpose:
-
-Track every HTTP request reaching the application.
-
-Logs include:
-
-Client IP
-
-URL requested
-
-HTTP status code
-
-Target response time
-
-User agent
-
-Baseline configuration:
-
-Access logs enabled
-
-Delivered to S3 bucket
-
-Example statement:
-
-Application Load Balancer access logging is enabled to provide full
-visibility into inbound HTTP traffic and application usage patterns. 4. Host-Level Logging Baseline
-
-This is where SOC monitoring becomes powerful.
-
-Your EC2 instances should log:
-
-System logs
-
-Authentication attempts
-
-sudo usage
-
-service failures
-
-kernel messages
-
-Example files (Linux)
-/var/log/auth.log
-/var/log/syslog
-/var/log/secure
-
-These logs should be collected by:
-
-Wazuh
-
-Your Wazuh agent should collect:
-
-authentication logs
-
-process activity
-
-file integrity monitoring
-
-command execution
-
-root access
-
-Example baseline:
-
-All EC2 instances run the Wazuh agent which collects system,
-authentication, and integrity monitoring logs and forwards them
-to the Wazuh manager for centralized security analysis. 5. Monitoring & Alerting Layer
-
-Logs must feed a monitoring system.
-
-Amazon CloudWatch
-
-Used for:
-
-metric monitoring
-
-alarms
-
-log ingestion
-
-dashboards
-
-Example:
-
-CloudWatch alarms on:
-
-EC2 CPU > threshold
-
-instance health check failure
-
-unusual API activity
-
-6. Example Logging Baseline Section (For Your Repo)
-
-You could add this in a file like:
-
-/docs/logging-baseline.md
+This logging baseline completes the core visibility layer of Phase 1 and directly supports the project goal of simulating real Cloud Security Operations.
