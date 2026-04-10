@@ -55,7 +55,7 @@ Purpose: Create a centralized, tamper-resistant audit trail that records:
 ---
 
 - Created dedicated `cloudtrail-logs-aris-saputra` S3 Bucket (Log Storage) with :
-  - Versioning, Block Public Access, and Server-side encryption (SSE-S3) enabled. - Policy:
+  - Versioning, Block Public Access, and Server-side encryption (SSE-S3) enabled. This will prevent log tampering.
     ![S3 Bucket Policy](../../assets/screenshot/phase-1/07-s3-bucket-policy.png)
     _Figure 2: Console Preview S3 Buckets policy._
 

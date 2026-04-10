@@ -77,6 +77,18 @@ Cloud-SOC-NOC-Operations-Portfolio/
   - Attack simulation and detection validation.
   - Continuous improvement of security controls
 
+## Skills Demonstrated
+
+- Multi-tier AWS VPC design with defense-in-depth segmentation
+- IAM least-privilege policy design (custom JSON policies, role-based groups)
+- Auto Scaling Group configuration with Launch Template automation
+- TLS termination with ACM + ALB + security policy configuration
+- Centralized logging: CloudTrail, VPC Flow Logs, ALB Access Logs
+- SIEM deployment: Wazuh on EC2 with automated agent registration
+- Cost optimization: Graviton instances, single NAT, Free Tier management
+- Immutable infrastructure pattern via Launch Template User Data
+- Security monitoring: GuardDuty, Security Hub, IAM Access Analyzer
+
 ## Target Roles
 
 This portfolio is designed to demonstrate readiness for:
